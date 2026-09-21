@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  scripts      Script[]
+}
+
+model Script {
+  id             String        @id @default(cuid())
+  ownerId        String
+  owner          User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  encryptedSource String
+  sourceIv       String
+  token          String        @unique
+  enabled        Boolean       @default(true)
+  revision       Int           @default(1)
+  totalRequests  Int           @default(0)
+  lastRequestedAt DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  logs           RequestLog[]
+}
+
+model RequestLog {
+  id          String   @id @default(cuid())
+  scriptId    String
+  script      Script   @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  ipHash      String
+  userAgent   String?
+  allowed     Boolean
+  reason      String?
+  createdAt   DateTime @default(now())
+  @@index([scriptId, createdAt])
+  @@index([ipHash, createdAt])
+}
